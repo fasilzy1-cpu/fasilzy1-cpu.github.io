@@ -322,11 +322,20 @@ function showToast(message, type="info") {
     showToast(msg || "没有处理任何 ID","info");
     });
 
+    // 9️⃣ 复制剧名
+    const btnCopyDramaName = mkBtn("复制剧名", () => {
+        const match = mainData.match(/剧名\{([\s\S]*?)\}/);
+        if (!match) return showToast("未找到剧名内容", "error");
+        const dramaName = match[1].trim();
+        navigator.clipboard.writeText(dramaName).then(() => showToast(`已复制剧名：${dramaName}`, "success"));
+});
+
+
     /***********************
      * 🧮 布局按钮
      ***********************/
     const row1=document.createElement("div"); // 复制内容 + 复制账户ID
-    row1.append(btnCopyAll,btnCopyID);
+    row1.append(btnCopyAll,btnCopyID,btnCopyDramaName);
     const row2=document.createElement("div"); // 添加剧ID + 添加链接
     row2.append(btnAddDrama,btnAddLink);
     const row3=document.createElement("div"); // 备注账户 + 取链接 + 填入链接
