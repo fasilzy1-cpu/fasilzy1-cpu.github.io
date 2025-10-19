@@ -84,6 +84,21 @@ function showToast(message, type="info") {
     };
 
     /***********************
+     * 🔗 点击账户ID工具函数
+     ***********************/
+    function clickAccountsByID(accountIDs) {
+    let found = [], notFound = [];
+    accountIDs.forEach(aid => {
+        let ok = false;
+        document.querySelectorAll("a.el-link").forEach(a => {
+        if(a.href.includes("aadvid=" + aid)) { a.click(); ok = true; }
+        });
+        ok ? found.push(aid) : notFound.push(aid);
+    });
+    return {found, notFound};
+    }
+
+    /***********************
      * ⚙️ 功能按钮
      ***********************/
     // 1️⃣ 复制内容
@@ -290,6 +305,23 @@ function showToast(message, type="info") {
         showToast(`✅ 已填入 ${parsed.length} 条链接`,"success");
     });
 
+     // 8 打开落地页
+        const btnClickByID = mkBtn("打开落地页", () => {
+    // 从 mainData 中提取账户ID
+    const idMatch = mainData.match(/账户ID\{([^}]*)\}/);
+    if(!idMatch) return showToast("mainData 中没有账户ID","error");
+    
+    const accountIDs = idMatch[1].split("\n").map(i => i.trim()).filter(Boolean);
+
+    const result = clickAccountsByID(accountIDs);
+    
+    let msg = "";
+    if(result.found.length) msg += "已点击：" + result.found.join(", ") + "\n";
+    if(result.notFound.length) msg += "未找到：" + result.notFound.join(", ");
+    
+    showToast(msg || "没有处理任何 ID","info");
+    });
+
     /***********************
      * 🧮 布局按钮
      ***********************/
@@ -298,7 +330,7 @@ function showToast(message, type="info") {
     const row2=document.createElement("div"); // 添加剧ID + 添加链接
     row2.append(btnAddDrama,btnAddLink);
     const row3=document.createElement("div"); // 备注账户 + 取链接 + 填入链接
-    row3.append(btnRemark,btnGetLink,btnFillLink);
+    row3.append(btnRemark,btnGetLink,btnFillLink,btnClickByID);
     btnWrap.append(row1,row2,row3);
 
     /***********************
