@@ -245,8 +245,59 @@ function showToast(message, type="info") {
     }
   });
 
-  const btnFillLink = mkBtn("填入链接",()=>{ /* 略，为节省篇幅，此处保持你的原逻辑 */ });
+      // 7️⃣ 填入链接
+    const btnFillLink = mkBtn("填入链接",()=>{
+        if (!mainData.includes("链接{")) return showToast("❌ 请先添加链接","error");
 
+        const getBlock = (key) => {
+            const match = mainData.match(new RegExp(key + "\\{([\\s\\S]*?)\\}"));
+            if (!match) return [];
+            return match[1].split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+        };
+
+        const remarks = getBlock("链接备注");
+        const links = getBlock("链接");
+        if (!links.length) return showToast("⚠️ 当前数据中未找到链接","error");
+
+        const parsed = links.map((link, i) => {
+            let page = "未知页面";
+            if (link.startsWith("code=")) page = "pages/theatre/index";
+            else if (link.startsWith("bookId=")) page = "pages/theater/index";
+            else if (link.startsWith("serial_id=")) page = "pages/swiper/swiper";
+            return { params: link, remark: remarks[i] || "", page };
+        });
+
+        const paramsText = parsed.map(p=>p.params).join("\n");
+        const remarkText = parsed.map(p=>p.remark).join("\n");
+        const pageText = parsed.map(p=>p.page).join("\n");
+
+        const findTextarea = (labelText, placeholderText) => {
+            const label = [...document.querySelectorAll("label")].find(l=>l.innerText.trim()===labelText);
+            if(label){
+                const fid=label.getAttribute("for");
+                if(fid){const t=document.getElementById(fid);if(t)return t;}
+                const parent=label.closest(".el-form-item,.el-form-item__content,.el-space__item");
+                if(parent){const t=parent.querySelector("textarea.el-textarea__inner,textarea");if(t)return t;}
+            }
+            const t2=[...document.querySelectorAll("textarea")].find(t=>(t.placeholder||"").includes(placeholderText));
+            return t2||null;
+        };
+
+        const setVal=(el,v)=>{
+            if(!el)return;
+            el.focus();
+            el.value=v;
+            el.dispatchEvent(new Event("input",{bubbles:true}));
+            el.dispatchEvent(new Event("change",{bubbles:true}));
+            el.blur();
+        };
+
+        setVal(findTextarea("启动参数","请输入启动参数"),paramsText);
+        setVal(findTextarea("链接备注","请输入链接备注"),remarkText);
+        setVal(findTextarea("启动页面","请输入启动页面"),pageText);
+        showToast(`✅ 已填入 ${parsed.length} 条链接`,"success");
+    });
+  
   const btnClickByID = mkBtn("打开落地页", () => {
     const idMatch = mainData.match(/账户ID\{([^}]*)\}/);
     if(!idMatch) return showToast("mainData 中没有账户ID","error");
@@ -294,3 +345,4 @@ function showToast(message, type="info") {
   document.body.appendChild(panel);
 })();
 })();
+
