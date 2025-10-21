@@ -243,13 +243,17 @@ function showToast(message, type="info") {
             if(target)target.click();
         }
 
-        const textareas=document.querySelectorAll("textarea.el-textarea__inner");
-        if(textareas.length>=2){
-            textareas[0].value=accountIds.join("\n");
+        const textareas = document.querySelectorAll("textarea.el-textarea__inner");
+        if (textareas.length >= 2) {
+            textareas[0].value = accountIds.join("\n");
             textareas[0].dispatchEvent(new Event("input"));
-            textareas[1].value=dramaIds.join("\n");
-            showToast(`✅ 已选择主体 ${subject}，填入 ${accountIds.length} 个账户ID`,`success`);
+        
+            textareas[1].value = dramaIds.join("\n");
+            textareas[1].dispatchEvent(new Event("input")); // ✅ 新增：触发第二个输入框事件
+        
+            showToast(`✅ 已选择主体 ${subject}，填入 ${accountIds.length} 个账户ID`, "success");
         }
+
     });
 
     // 7️⃣ 填入链接
@@ -360,3 +364,4 @@ function showToast(message, type="info") {
     document.body.appendChild(panel);
 
 })();
+
