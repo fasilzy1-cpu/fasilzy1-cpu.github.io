@@ -327,10 +327,16 @@ function showToast(message, type="info") {
     const nameLines = nameMatch[1].split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
     if (!nameLines.length) return showToast("⚠️ 名称{} 中无有效行","error");
 
-    // 行类型识别：包含“超小/小/大”
-    const getType = line => line.includes("超小")?"超小":line.includes("小")?"小":line.includes("大")?"大":null;
+    // 🧠 类型识别逻辑（精确版）
+    const getType = (line) => {
+      if (line.match(/超小/)) return "超小";
+      if (line.match(/(^|[^超])小/)) return "小";
+      if (line.match(/(^|[^超])大/)) return "大";
+      return null;
+    };
     const typeSeq = nameLines.map(getType).filter(Boolean);
     if (!typeSeq.length) return showToast("❌ 未识别到类型","error");
+    
 
     /* 📦 映射数据区（替换这里的映射可调整策略） */
     const mapCol5 = { "超小": "1:1卡7", "小": "1:1卡9.9", "大": "2:1卡50" };
