@@ -253,163 +253,19 @@ function showToast(message, type="info") {
     }
   });
 
-  /* 🧾 按钮：填入链接（启动参数/链接备注/启动页面） */
-  const btnFillLink = mkBtn("填入链接",()=>{
-    if (!mainData.includes("链接{")) return showToast("❌ 请先添加链接","error");
-    const getBlock = (key) => {
-      const match = mainData.match(new RegExp(key + "\\{([\\s\\S]*?)\\}"));
-      if (!match) return [];
-      return match[1].split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-    };
-    const remarks = getBlock("链接备注");
-    const links = getBlock("链接");
-    if (!links.length) return showToast("⚠️ 当前数据中未找到链接","error");
-
-    const parsed = links.map((link, i) => {
-      let page = "未知页面";
-      if (link.startsWith("code=")) page = "pages/theatre/index";
-      else if (link.startsWith("bookId=")) page = "pages/theater/index";
-      else if (link.startsWith("serial_id=")) page = "pages/swiper/swiper";
-      return { params: link, remark: remarks[i] || "", page };
-    });
-
-    const paramsText = parsed.map(p=>p.params).join("\n");
-    const remarkText = parsed.map(p=>p.remark).join("\n");
-    const pageText = parsed.map(p=>p.page).join("\n");
-
-    const findTextarea = (labelText, placeholderText) => {
-      const label = [...document.querySelectorAll("label")].find(l=>l.innerText.trim()===labelText);
-      if(label){
-        const fid=label.getAttribute("for");
-        if(fid){const t=document.getElementById(fid);if(t)return t;}
-        const parent=label.closest(".el-form-item,.el-form-item__content,.el-space__item");
-        if(parent){const t=parent.querySelector("textarea.el-textarea__inner,textarea");if(t)return t;}
+    /* 🧠 按钮：加载远程脚本 */
+    const btnAutoMatch = mkBtn("执行远程脚本", ()=>{
+      showToast("🚀 正在加载远程脚本...","info");
+      try {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/gh/fasilzy1-cpu/fasilzy1-cpu.github.io@main/getlink.js";
+        s.onload = () => showToast("✅ 远程脚本加载完成！","success");
+        s.onerror = () => showToast("❌ 脚本加载失败","error");
+        document.body.appendChild(s);
+      } catch (e) {
+        showToast("⚠️ 加载出错：" + e.message,"error");
       }
-      const t2=[...document.querySelectorAll("textarea")].find(t=>(t.placeholder||"").includes(placeholderText));
-      return t2||null;
-    };
-
-    const setVal=(el,v)=>{
-      if(!el)return;
-      el.focus();
-      el.value=v;
-      el.dispatchEvent(new Event("input",{bubbles:true}));
-      el.dispatchEvent(new Event("change",{bubbles:true}));
-      el.blur();
-    };
-
-    setVal(findTextarea("启动参数","请输入启动参数"),paramsText);
-    setVal(findTextarea("链接备注","请输入链接备注"),remarkText);
-    setVal(findTextarea("启动页面","请输入启动页面"),pageText);
-    showToast(`✅ 已填入 ${parsed.length} 条链接`,"success");
-  });
-
-  /* 🌐 按钮：打开落地页（点击包含 aadvid 的链接） */
-  const btnClickByID = mkBtn("打开落地页", () => {
-    const idMatch = mainData.match(/账户ID\{([^}]*)\}/);
-    if(!idMatch) return showToast("mainData 中没有账户ID","error");
-    const accountIDs = idMatch[1].split("\n").map(i => i.trim()).filter(Boolean);
-    const result = clickAccountsByID(accountIDs);
-    let msg = "";
-    if(result.found.length) msg += "已点击：" + result.found.join(", ") + "\n";
-    if(result.notFound.length) msg += "未找到：" + result.notFound.join(", ");
-    showToast(msg || "没有处理任何 ID","info");
-  });
-
-  /* 🧠 按钮：批量匹配填充（从 名称{} 自动识别“超小/小/大”并批量操作第5/6/8列） */
-  const btnAutoMatch = mkBtn("批量匹配填充", async()=>{
-
-    // 读取 mainData 的 名称{} 块
-    let md = localStorage.getItem("panel_mainData_v1");
-    if (!md) return showToast("❌ 未检测到 mainData","error");
-    const nameMatch = md.match(/名称\{([\s\S]*?)\}/);
-    if (!nameMatch) return showToast("⚠️ mainData 中未找到 名称{} 区块","error");
-    const nameLines = nameMatch[1].split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-    if (!nameLines.length) return showToast("⚠️ 名称{} 中无有效行","error");
-
-    // 🧠 类型识别逻辑（精确版）
-    const getType = (line) => {
-      if (line.match(/超小/)) return "超小";
-      if (line.match(/(^|[^超])小/)) return "小";
-      if (line.match(/(^|[^超])大/)) return "大";
-      return null;
-    };
-    const typeSeq = nameLines.map(getType).filter(Boolean);
-    if (!typeSeq.length) return showToast("❌ 未识别到类型","error");
-    
-
-    /* 📦 映射数据区（替换这里的映射可调整策略） */
-    const mapCol5 = { "超小": "1:1卡7", "小": "1:1卡9.9", "大": "2:1卡50" };
-    const mapCol6 = { "超小": "超小9.9F", "小": "小额起量-全剧买断", "大": "大额高充-49起-慎" };
-    const mapCol8 = { "超小": "0.88", "小": "1.88", "大": "3.88" };
-
-    const sleep = ms=>new Promise(r=>setTimeout(r,ms));
-
-    // 表格列扫描：收集第5/6/8列的 select/input
-    const rows = Array.from(document.querySelectorAll("tbody tr"));
-    const cols = [];
-    rows.forEach((row, rIdx) => {
-      row.querySelectorAll("td").forEach((td, cIdx)=>{
-        const sel = td.querySelector(".el-select");
-        const inp = td.querySelector("input.el-input__inner");
-        if(!cols[cIdx]) cols[cIdx]=[];
-        if(sel) cols[cIdx].push({row:rIdx,el:sel,type:"select"});
-        if(inp) cols[cIdx].push({row:rIdx,el:inp,type:"input"});
-      });
     });
-    const col5=cols[4]||[],col6=cols[5]||[],col8=cols[7]||[];
-
-    // 事件/交互工具
-    const dispatchMouseEvent=(el,t)=>el&&el.dispatchEvent(new MouseEvent(t,{bubbles:true,cancelable:true,view:window}));
-    const isVisible=el=>el&&getComputedStyle(el).display!=="none"&&el.offsetParent!==null;
-    async function waitForDropdown(sel,timeout=1500){
-      const start=Date.now();
-      while(Date.now()-start<timeout){
-        const list=[...document.querySelectorAll(".el-select-dropdown__list,.el-scrollbar__view")].find(isVisible);
-        if(list)return list;
-        await sleep(40);
-      }
-      return null;
-    }
-    async function openAndSelect(sel,text){
-      const inp=sel.querySelector("input,.el-input__inner")||sel;
-      dispatchMouseEvent(inp,"mousedown");dispatchMouseEvent(inp,"mouseup");dispatchMouseEvent(inp,"click");
-      const list=await waitForDropdown(sel,1500);
-      if(!list)return false;
-      const item=[...list.querySelectorAll(".el-select-dropdown__item")].find(i=>(i.innerText||"").trim()===text);
-      if(item){dispatchMouseEvent(item,"mousedown");dispatchMouseEvent(item,"mouseup");dispatchMouseEvent(item,"click");return true;}
-      return false;
-    }
-    async function fillInput(inp,val){
-      const set=Object.getOwnPropertyDescriptor(inp.__proto__,"value")?.set;
-      if(set)set.call(inp,val);else inp.value=val;
-      inp.dispatchEvent(new Event("input",{bubbles:true}));
-      inp.dispatchEvent(new Event("change",{bubbles:true}));
-      inp.blur();await sleep(20);
-    }
-
-    // 执行：第5列每两行组，第二行选项；第6列每行选；第8列每行填
-    for(let i=0;i<col5.length;i++){
-      const group=Math.floor(i/2);
-      const type=typeSeq[group%typeSeq.length];
-      const text=mapCol5[type];
-      if(i%2===1&&text){await openAndSelect(col5[i].el,text);await sleep(80);}
-    }
-    for(let i=0;i<col6.length;i++){
-      const group=Math.floor(i/2);
-      const type=typeSeq[group%typeSeq.length];
-      const text=mapCol6[type];
-      if(text){await openAndSelect(col6[i].el,text);await sleep(80);}
-    }
-    for(let i=0;i<col8.length;i++){
-      const group=Math.floor(i/2);
-      const type=typeSeq[group%typeSeq.length];
-      const val=mapCol8[type];
-      if(val){await fillInput(col8[i].el,val);await sleep(50);}
-    }
-
-    showToast("✅ 批量匹配填充完成！","success");
-  });
 
   /* 🧩 面板布局：分行组织按钮 */
   const btnWrap=document.createElement("div");
