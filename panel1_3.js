@@ -272,7 +272,7 @@ function showToast(message, type="info") {
   panel.appendChild(btnWrap);
   const row1=document.createElement("div"); row1.append(btnCopyAll,btnCopyID,btnCopyDramaName);
   const row2=document.createElement("div"); row2.append(btnAddDrama,btnAddLink);
-  const row3=document.createElement("div"); row3.append(btnRemark,btnGetLink,btnFillLink,btnClickByID);
+  const row3=document.createElement("div"); row3.append(btnRemark,btnGetLink,btnAutoMatch,btnClickByID);
   const row4=document.createElement("div"); row4.append(btnAutoMatch,btnShowData,btnClearData);
   btnWrap.append(row1,row2,row3,row4);
 
