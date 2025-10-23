@@ -59,7 +59,7 @@ function showToast(message, type="info") {
   `;
 
   const header=document.createElement("div");
-  header.textContent="📋 数据工具面板";
+  header.textContent="F_Panel";
   header.style.cssText=`
     cursor:move;font-weight:bold;margin-bottom:8px;background:#f5f5f5;
     padding:4px 8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;
@@ -386,7 +386,7 @@ function showToast(message, type="info") {
   row2.append(btnAddDrama,btnAddLink);
 
   const row3=document.createElement("div");
-  row3.append(btnRemark,btnGetLink,btnFillLink,btnClickByID,btnAutoMatch);
+  row3.append(btnRemark,btnGetLink,btnAutoMatch,btnFillLink,btnClickByID);
 
   const row4=document.createElement("div");
   row4.append(btnShowData,btnClearData);
@@ -411,4 +411,5 @@ function showToast(message, type="info") {
 
 })(); // 初始化模块结束
 })(); // 外层立即执行结束
+
 
