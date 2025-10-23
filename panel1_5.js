@@ -365,7 +365,7 @@ function showToast(message, type="info") {
     showToast("🚀 正在加载远程脚本...","info");
     try {
       const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/gh/fasilzy1-cpu/fasilzy1-cpu.github.io@main/getlink.js";
+      s.src = "https://cdn.jsdelivr.net/gh/fasilzy1-cpu/fasilzy1-cpu.github.io@main/getlink2.js";
       s.onload = () => showToast("✅ 远程脚本加载完成并执行！","success");
       s.onerror = () => showToast("❌ 脚本加载失败","error");
       document.body.appendChild(s);
@@ -411,3 +411,4 @@ function showToast(message, type="info") {
 
 })(); // 初始化模块结束
 })(); // 外层立即执行结束
+
